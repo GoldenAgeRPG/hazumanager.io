@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cozinha do Mestre Hazu</title>
+  
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+
+  <style>
+    :root {
+      --bg: #0d0d12;
+      --panel: #1a1a24;
+      --border: #3d3d5c;
+      --primary: #8a2be2;
+      --accent: #05d9e8;
+      --danger: #ff2a6d;
+      --text: #e0e0e0;
+      --input-bg: #08080a;
+    }
+    
+    * { box-sizing: border-box; }
+    body { margin: 0; padding: 0; height: 100vh; background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; overflow: hidden; }
+    #app { display: flex; height: 100%; position: relative; }
+
+    /* SIDEBAR */
+    .sidebar { width: 550px; background: var(--panel); border-right: 1px solid var(--border); display: flex; flex-direction: column; z-index: 20; box-shadow: 5px 0 30px #000; }
+    .header { padding: 15px; background: #000; border-bottom: 2px solid var(--primary); display: flex; align-items: center; justify-content: space-between; }
+    .header h1 { font-family: 'Press Start 2P'; font-size: 12px; color: var(--accent); margin: 0; letter-spacing: 1px; }
+    
+    .scroll-area { flex: 1; overflow-y: auto; padding: 20px; }
+    .scroll-area::-webkit-scrollbar { width: 6px; background: #000; }
+    .scroll-area::-webkit-scrollbar-thumb { background: var(--primary); }
+
+    /* UI ELEMENTS */
+    .group-title { font-family: 'Press Start 2P'; font-size: 10px; color: #666; margin: 25px 0 10px; text-transform: uppercase; border-bottom: 1px solid #333; padding-bottom: 5px; }
+    .card { background: #222; border: 1px solid #333; padding: 15px; border-radius: 6px; margin-bottom: 15px; }
+    .card-row { display: flex; gap: 10px; margin-bottom: 10px; }
+    .card-col { flex: 1; }
+
+    label { display: block; font-size: 10px; color: var(--accent); margin-bottom: 4px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+    .inp { width: 100%; background: var(--input-bg); border: 1px solid #444; color: #fff; padding: 6px 8px; font-family: 'VT323', monospace; font-size: 15px; border-radius: 4px; transition: 0.2s; }
+    .inp:focus { border-color: var(--primary); outline: none; background: #000; }
+    textarea.inp { min-height: 80px; font-family: 'Inter', sans-serif; font-size: 13px; line-height: 1.4; resize: vertical; }
+    select.inp { appearance: none; cursor: pointer; }
+
+    /* TOOLBARS */
+    .bb-toolbar { display: flex; gap: 5px; margin-bottom: 5px; background: #111; padding: 5px; border-radius: 4px; border: 1px solid #333; }
+    .bb-btn { background: #222; border: 1px solid #444; color: #aaa; cursor: pointer; font-family: 'Inter', sans-serif; font-weight: bold; font-size: 11px; padding: 4px 8px; border-radius: 3px; min-width: 24px; text-align: center; }
+    .bb-btn:hover { background: var(--primary); color: #fff; border-color: var(--primary); }
+
+    .actions-grid { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 8px; }
+    .act-box { text-align: center; }
+    .act-box label { font-size: 9px; color: #888; }
+    .act-box input { text-align: center; font-weight: bold; color: var(--accent); }
+
+    .tech-item, .inv-item { background: #15151a; border: 1px dashed #444; padding: 10px; margin-bottom: 10px; border-radius: 4px; position: relative; }
+    .btn-del { position: absolute; top: 5px; right: 5px; background: transparent; border: none; color: #666; cursor: pointer; font-size: 16px; line-height: 1; }
+    .btn-del:hover { color: var(--danger); }
+    .btn-add { width: 100%; background: #222; border: 1px dashed #555; color: var(--accent); padding: 8px; cursor: pointer; font-family: 'Press Start 2P'; font-size: 9px; margin-top: 5px; transition: 0.2s; }
+    .btn-add:hover { background: var(--primary); color: #fff; border-color: var(--primary); }
+
+    /* PREVIEW & MAIN */
+    .main { flex: 1; background: #050508; display: flex; align-items: center; justify-content: center; position: relative; }
+    .bg-grid { position: absolute; inset: 0; opacity: 0.1; background-image: linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px); background-size: 40px 40px; pointer-events: none; }
+    iframe { width: 100%; height: 100%; border: none; }
+
+    .toolbar { padding: 10px; background: #111; border-top: 1px solid #333; display: flex; gap: 10px; }
+    .btn { flex: 1; padding: 12px; border: none; cursor: pointer; font-family: 'Press Start 2P'; font-size: 10px; color: #fff; transition: 0.2s; }
+    .btn-copy { background: var(--primary); } .btn-copy:hover { background: #9d4bf0; }
+    .btn-skin { background: #333; border: 1px solid #555; } .btn-skin:hover { border-color: var(--accent); color: var(--accent); }
+    .btn-reset { background: #220000; color: var(--danger); } .btn-reset:hover { background: var(--danger); color: #fff; }
+    .btn-import { background: #003366; color: #4dabf7; } .btn-import:hover { background: #4dabf7; color: #fff; }
+
+    .toast { position: fixed; bottom: 20px; right: 20px; background: var(--accent); color: #000; padding: 10px 20px; font-family: 'Press Start 2P'; font-size: 10px; opacity: 0; transition: 0.3s; pointer-events: none; z-index: 100; }
+    .toast.show { opacity: 1; bottom: 40px; }
+
+    /* MODAL */
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 200; display: flex; align-items: center; justify-content: center; }
+    .modal { background: var(--panel); border: 2px solid var(--accent); width: 600px; padding: 20px; border-radius: 8px; }
+    .modal textarea { width: 100%; height: 200px; background: #000; color: #0f0; font-family: monospace; border: 1px solid #333; padding: 10px; margin: 10px 0; font-size: 12px; resize: none; }
+    .modal-actions { display: flex; gap: 10px; }
+
+    @media (max-width: 900px) {
+      #app { flex-direction: column; }
+      .sidebar { width: 100%; height: 50%; border-right: none; border-bottom: 4px solid var(--primary); }
+      .main { height: 50%; }
+    }
+  </style>
+</head>
+<body>
+
+<div id="app">
+  <div class="toast" :class="{show: showToast}">{{ toastMsg }}</div>
+
+  <div class="modal-overlay" v-if="showImportModal">
+    <div class="modal">
+      <h2 style="font-family:'Press Start 2P'; font-size:12px; color:var(--accent);">IMPORTAR CÓDIGO HTML</h2>
+      <textarea v-model="importCode" placeholder="Cole o código aqui..."></textarea>
+      <div class="modal-actions">
+        <button class="btn btn-copy" @click="processImport">CARREGAR</button>
+        <button class="btn btn-reset" @click="showImportModal = false">CANCELAR</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="sidebar">
+    <div class="header">
+      <h1>COZINHA DO MESTRE HAZU (E GENGAR!)</h1>
+      <span style="font-size:10px; color:#fff; opacity:0.3; font-family:'Inter';">Autosave ON</span>
+    </div>
+
+    <div class="scroll-area">
+      <div class="group-title">Cabeçalho & Stats</div>
+      <div class="card">
+        <div class="card-row">
+          <div class="card-col"><label>Nome</label><input class="inp" v-model="d.name"></div>
+          <div class="card-col"><label>Subtítulo</label><input class="inp" v-model="d.sub"></div>
+        </div>
+        <div class="card-row">
+          <div class="card-col"><label>Imagem Banner (URL)</label><input class="inp" v-model="d.img"></div>
+        </div>
+        <div class="card-row">
+          <div class="card-col"><label>HP</label><input class="inp" v-model="d.hp"></div>
+          <div class="card-col"><label>EA</label><input class="inp" v-model="d.ea"></div>
+          <div class="card-col"><label>SAN</label><input class="inp" v-model="d.san" placeholder="Ex: 200/200"></div>
+        </div>
+      </div>
+
+      <div class="group-title">Narrativa</div>
+      <div class="card">
+        <label>Corpo do Post</label>
+        <div class="bb-toolbar">
+          <button class="bb-btn" @click="insertTag('body', '[b]', '[/b]')">B</button>
+          <button class="bb-btn" @click="insertTag('body', '[i]', '[/i]')">I</button>
+          <button class="bb-btn" @click="insertTag('body', '[spoiler]', '[/spoiler]')"><span class="material-icons-round" style="font-size:14px">visibility_off</span></button>
+        </div>
+        <textarea id="inp-body" class="inp" v-model="d.body" style="height:150px;"></textarea>
+      </div>
+
+      <div class="group-title">Rastreio RPG</div>
+      <div class="card">
+        <div class="card-row">
+          <div class="card-col"><label>Objetivo</label><input class="inp" v-model="d.obj"></div>
+          <div class="card-col"><label>Palavras</label><input class="inp" v-model="d.words"></div>
+          <div class="card-col"><label>Turno</label><input class="inp" v-model="d.turn"></div>
+        </div>
+        
+        <label style="margin-top:10px;">Ações do Jogador</label>
+        <div class="actions-grid">
+          <div class="act-box"><label>OFENSIVAS</label><input class="inp" v-model="d.act_off"></div>
+          <div class="act-box"><label>DEFENSIVAS</label><input class="inp" v-model="d.act_def"></div>
+          <div class="act-box"><label>SUPORTE</label><input class="inp" v-model="d.act_sup"></div>
+          <div class="act-box"><label>LIVRE</label><input class="inp" v-model="d.act_free"></div>
+        </div>
+
+        <label style="margin-top:15px; color:var(--primary);">Ação do Shikigami</label>
+        <div class="card-row">
+          <div class="card-col" style="max-width:100px; margin:0 auto;">
+            <label style="text-align:center;">LIVRE</label>
+            <input class="inp" v-model="d.pet_free" style="text-align:center; font-weight:bold; color:var(--accent); border-color:var(--primary);">
+          </div>
+        </div>
+
+        <label style="margin-top:10px;">Estilo de Vida</label>
+        <select class="inp" v-model="d.lifestyle">
+          <option value="Inanição">Inanição</option>
+          <option value="Subnutrido">Subnutrido</option>
+          <option value="Estável">Estável</option>
+          <option value="Saciado">Saciado</option>
+          <option value="Vigoroso">Vigoroso</option>
+          <option value="Pleno">Pleno</option>
+        </select>
+      </div>
+
+      <div class="group-title">Resumo & Aptidões</div>
+      <div class="card">
+        <label>Resumo do Turno (Enter cria lista)</label>
+        <textarea id="inp-summary" class="inp" v-model="d.summary" @keydown.enter.prevent="handleListEnter($event, 'summary')" placeholder="• Item 1..."></textarea>
+        
+        <div style="margin-top:10px;">
+          <label>Aptidões Usadas</label>
+          <input class="inp" v-model="d.aptitudes">
+        </div>
+      </div>
+
+      <div class="group-title">Técnicas Ativas</div>
+      <div v-for="(tech, i) in d.techniques" :key="i" class="tech-item">
+        <button class="btn-del" @click="remTech(i)">✕</button>
+        <div class="card-row">
+          <div class="card-col"><label>Nome</label><input class="inp" v-model="tech.name"></div>
+          <div class="card-col"><label>Custo</label><input class="inp" v-model="tech.cost"></div>
+        </div>
+        <div class="card-row">
+          <div class="card-col"><label>CD</label><input class="inp" v-model="tech.cd"></div>
+          <div class="card-col"><label>Dano</label><input class="inp" v-model="tech.dmg"></div>
+        </div>
+        <label>Descrição</label>
+        <textarea class="inp" v-model="tech.desc" style="min-height:60px;"></textarea>
+      </div>
+      <button class="btn-add" @click="addTech">+ ADICIONAR TÉCNICA</button>
+
+      <div class="group-title">Inventário</div>
+      <div v-for="(item, i) in d.inventory" :key="'inv'+i" class="inv-item">
+        <button class="btn-del" @click="remInv(i)">✕</button>
+        <div class="card-row">
+          <div class="card-col" style="flex:2;"><label>Nome</label><input class="inp" v-model="item.name"></div>
+          <div class="card-col"><label>Tipo</label><input class="inp" v-model="item.type"></div>
+        </div>
+        <div class="card-row">
+          <div class="card-col"><label>Grau</label><input class="inp" v-model="item.grade"></div>
+          <div class="card-col"><label>Dano</label><input class="inp" v-model="item.dmg"></div>
+          <div class="card-col"><label>Dur</label><input class="inp" v-model="item.dur"></div>
+        </div>
+        <label>Descrição</label>
+        <textarea class="inp" v-model="item.desc" style="min-height:40px;"></textarea>
+        <label>Efeito</label>
+        <textarea class="inp" v-model="item.effect" style="min-height:40px; margin-bottom:5px;"></textarea>
+      </div>
+      <button class="btn-add" @click="addInv">+ ADICIONAR ITEM</button>
+
+      <div class="group-title">Pet / Shikigami</div>
+      <div class="card">
+        <div class="card-row">
+          <div class="card-col"><label>Nome</label><input class="inp" v-model="d.pet_name"></div>
+          <div class="card-col"><label>HP</label><input class="inp" v-model="d.pet_hp"></div>
+        </div>
+        <label>Imagem (URL)</label>
+        <input class="inp" v-model="d.pet_img">
+      </div>
+    </div>
+
+    <div class="toolbar">
+      <button class="btn btn-reset" @click="reset">LIMPAR</button>
+      <button class="btn btn-import" @click="showImportModal = true">IMPORTAR</button>
+      <button class="btn btn-skin" @click="toggleSkin">SKIN: {{ skinName }}</button>
+      <button class="btn btn-copy" @click="copyCode">COPIAR</button>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="bg-grid"></div>
+    <iframe ref="iframe"></iframe>
+  </div>
+</div>
+
+<script>
+  const { createApp, ref, computed, watch, onMounted, nextTick } = Vue;
+  const STORAGE_KEY = 'hazu_manager_save_v9';
+
+  const EMPTY_DATA = {
+    name: "", sub: "", img: "", hp: "", ea: "", san: "", body: "",
+    obj: "", words: "", turn: "", act_off: "", act_def: "", act_sup: "", act_free: "",
+    pet_free: "", lifestyle: "Estável", summary: "• ", aptitudes: "", techniques: [], inventory: [],
+    pet_name: "", pet_hp: "", pet_img: ""
+  };
+
+  createApp({
+    setup() {
+      const d = ref(JSON.parse(JSON.stringify(EMPTY_DATA)));
+      const iframe = ref(null);
+      const isGengarSkin = ref(false);
+      const showToast = ref(false);
+      const toastMsg = ref('');
+      const showImportModal = ref(false);
+      const importCode = ref('');
+
+      const skinName = computed(() => isGengarSkin.value ? "GENGAR" : "CHEF");
+
+      // LOAD SAVE
+      onMounted(() => {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) {
+          try { d.value = JSON.parse(saved); } catch(e) {}
+        }
+        render();
+      });
+
+      watch(d, (newVal) => { localStorage.setItem(STORAGE_KEY, JSON.stringify(newVal)); render(); }, { deep: true });
+      watch(isGengarSkin, () => render());
+
+      const handleListEnter = (e, field) => {
+        const el = e.target;
+        const start = el.selectionStart; const end = el.selectionEnd; const val = d.value[field];
+        d.value[field] = val.substring(0, start) + "\n• " + val.substring(end);
+        nextTick(() => { el.selectionStart = el.selectionEnd = start + 3; });
+      };
+
+      const reverseBB = (html) => {
+        if(!html) return "";
+        let t = html.replace(/<br\s*\/?>/gi, '\n');
+        t = t.replace(/<b>(.*?)<\/b>/gi, '[b]$1[/b]');
+        t = t.replace(/<i>(.*?)<\/i>/gi, '[i]$1[/i]');
+        t = t.replace(/<u>(.*?)<\/u>/gi, '[u]$1[/u]');
+        t = t.replace(/<span style="color:(.*?)">(.*?)<\/span>/gi, '[color=$1]$2[/color]');
+        return t.trim();
+      };
+
+      const parseBB = (text) => {
+        if(!text) return "";
+        return text
+          .replace(/\[b\](.*?)\[\/b\]/gis, '<b>$1</b>')
+          .replace(/\[i\](.*?)\[\/i\]/gis, '<i>$1</i>')
+          .replace(/\[u\](.*?)\[\/u\]/gis, '<u>$1</u>')
+          .replace(/\[color=(.*?)\](.*?)\[\/color\]/gis, '<span style="color:$1">$2</span>')
+          .replace(/\[spoiler(?:="(.*?)")?\](.*?)\[\/spoiler\]/gis, '<details><summary>$1</summary>$2</details>')
+          .replace(/\n/g, '<br>');
+      };
+
+      const insertTag = (fieldKey, open, close) => {
+        const el = document.getElementById(`inp-${fieldKey}`);
+        if (el) {
+          const s = el.selectionStart; const e = el.selectionEnd; const t = d.value[fieldKey];
+          d.value[fieldKey] = t.substring(0, s) + open + t.substring(s, e) + close + t.substring(e);
+          nextTick(() => { el.focus(); el.setSelectionRange(s+open.length, s+open.length+(e-s)); });
+        }
+      };
+
+      // SANITY LOGIC
+      const getSanityStatus = (sanString) => {
+        if(!sanString) return "";
+        const parts = sanString.split('/');
+        const val = parseInt(parts[0]);
+        if(isNaN(val)) return "";
+
+        let status = { title: "", buff: "", debuff: "" };
+
+        if(val >= 181) status = { title: "I. Lucidez", buff: "Nenhuma alteração.", debuff: "" };
+        else if(val >= 161) status = { title: "II. Inquietação", buff: "+3 no teste de Iniciativa (Hipervigilância).", debuff: "-5% HP Máximo." };
+        else if(val >= 141) status = { title: "III. Paranoia", buff: "Não pode ser Surpreendido.", debuff: "Não recebe cura/buffs de aliados." };
+        else if(val >= 111) status = { title: "IV. Dissociação", buff: "Ignora penalidade de Dor.", debuff: "-5 em Inteligência." };
+        else if(val >= 81) status = { title: "V. Frenesi", buff: "+25% de Dano Final.", debuff: "Incapaz de recuar; ataca aliados se impedido." };
+        else if(val >= 51) status = { title: "VI. Histeria", buff: "+1 Ação de cada tipo.", debuff: "Agressividade total; sem coordenação." };
+        else if(val >= 21) status = { title: "VII. Psicose", buff: "Custo de EA reduzido em 50%.", debuff: "-35% HP Máximo; ataca qualquer um." };
+        else status = { title: "VIII. O Abismo", buff: "+2 Ações Ofensivas; Destreza +10.", debuff: "Defesa Nula." };
+
+        return `<div class="gn-san-status" style="margin-top:10px; padding:8px; border:1px solid var(--gn-sec); background:rgba(0,0,0,0.05); border-radius:4px; font-size:0.9em;">
+          <b style="color:var(--gn-sec); font-family:'Bangers';">${status.title}</b><br>
+          <span style="color:var(--gn-text); font-size:0.9em;"><b>Buff:</b> ${status.buff}</span><br>
+          <span style="color:var(--gn-text); font-size:0.9em; opacity:0.8;"><b>Debuff:</b> ${status.debuff}</span>
+        </div>`;
+      };
+
+      const generateHTML = (isPreview = false) => {
+        const getPct = (val) => { if(!val) return 0; const p = val.split('/'); return p.length === 2 ? Math.min(100, (parseFloat(p[0])/parseFloat(p[1])*100)) : 100; };
+        
+        const lifeMap = {
+          "Inanição": "O personagem não recupera HP ou EA naturalmente. Todos os Atributos Físicos sofrem penalidade de -10 Pontos.",
+          "Subnutrido": "Recuperação natural reduzida à metade. Penalidade de -5 Pontos em Atributos Físicos.",
+          "Estável": "Condição padrão. Sem bônus ou penalidades.",
+          "Saciado": "Começa a semana com +10% de EA Temporária.",
+          "Vigoroso": "Bônus de +5 Níveis em Resistência e Vontade. Regeneração de EA acelerada em 50%.",
+          "Pleno": "Bônus de +10 Pontos em todos Atributos Físicos. Começa a semana com +30% de EA e HP Temporários."
+        };
+        const lifeBonus = lifeMap[d.value.lifestyle] || "";
+        const detailsAttr = isPreview ? 'open' : '';
+        const sanStatusHTML = getSanityStatus(d.value.san);
+
+        const techHTML = d.value.techniques.map(t => `<div class="parsed-tech" style="margin-bottom:10px; padding-bottom:10px; border-bottom:1px dashed rgba(0,0,0,0.1);"><b>${t.name}</b><br>${t.cost ? `<b>Custo:</b> ${t.cost}<br>` : ''}${t.cd ? `<b>Turno/CD:</b> ${t.cd}<br>` : ''}${t.dmg ? `<b>Dano:</b> ${t.dmg}<br>` : ''}<span class="tech-desc">${t.desc}</span></div>`).join('');
+        
+        // CORRIGIDO: ORDEM (Descrição -> Efeito) e Cor do Nome
+        const invHTML = d.value.inventory.map(i => `<div class="parsed-inv" style="margin-bottom:12px; border-bottom:1px dotted var(--gn-sec); padding-bottom:8px;"><b style="font-size:1.1em; color:var(--gn-accent);">${i.name}</b>${i.type ? `<span class="inv-type" style="font-size:0.9em; color:var(--gn-text);"> [${i.type}]</span>` : ''}<br>${i.grade ? `<i>Grau:</i> <span class="inv-grade">${i.grade}</span> &nbsp;|&nbsp;` : ''}${i.dmg ? `<i>Dano:</i> <span class="inv-dmg">${i.dmg}</span> &nbsp;|&nbsp;` : ''}${i.dur ? `<i>Dur:</i> <span class="inv-dur">${i.dur}</span>` : ''}${i.desc ? `<br><span class="inv-desc" style="font-size:0.9em; color:var(--gn-text); opacity:0.8;">${i.desc}</span>` : ''}${i.effect ? `<br><b>Efeito:</b> <span class="inv-effect">${i.effect}</span>` : ''}</div>`).join('');
+
+        return `
+          <link href="https://goldenagerpg.github.io/templates.io/hazugengar.css" rel="stylesheet" type="text/css">
+          <div class="gengar-container gengar-card ${isGengarSkin.value ? 'skin-gengar' : ''}">
+            <button class="skin-toggle-btn" type="button">MUDAR TEMPERO</button>
+            <div class="gengar-header"><div class="gengar-title-box"><h1 class="gengar-title">${d.value.name}</h1><div class="gengar-subtitle">${d.value.sub}</div></div></div>
+            <div class="gengar-img-frame"><img src="${d.value.img}"></div>
+            <div class="gengar-stats">
+              <div class="gengar-stat-row"><span class="gengar-stat-label" style="color:var(--gn-accent)">HP</span><div class="gengar-bar-bg"><div class="gengar-fill gn-hp gengar-hp-fill" style="width:${getPct(d.value.hp)}%"></div></div><span class="gengar-stat-val gengar-hp-val">${d.value.hp}</span></div>
+              <div class="gengar-stat-row"><span class="gengar-stat-label" style="color:var(--gn-gold)">EA</span><div class="gengar-bar-bg"><div class="gengar-fill gn-ea gengar-ea-fill" style="width:${getPct(d.value.ea)}%"></div></div><span class="gengar-stat-val gengar-ea-val">${d.value.ea}</span></div>
+              <div class="gengar-stat-row"><span class="gengar-stat-label" style="color:var(--gn-sec)">SAN</span><div class="gengar-bar-bg"><div class="gengar-fill gn-san gengar-san-fill" style="width:${getPct(d.value.san)}%"></div></div><span class="gengar-stat-val gengar-san-val">${d.value.san}</span></div>
+            </div>
+            <div class="gengar-body">${parseBB(d.value.body)}</div>
+            <details class="gn-drawer gn-recipe-drawer" ${detailsAttr}>
+              <summary></summary>
+              <div class="gn-drawer-content">
+                <div class="gn-rpg-grid">
+                  <div class="gn-rpg-item"><b>Objetivo:</b> <span class="rpg-obj">${d.value.obj}</span></div>
+                  <div class="gn-rpg-item"><b>Palavras:</b> <span class="rpg-words">${d.value.words}</span></div>
+                  <div class="gn-rpg-item" style="grid-column: span 2;"><b>Turno:</b> <span class="rpg-turn">${d.value.turn}</span></div>
+                </div>
+                <div class="gn-actions-box">
+                  <span class="gn-act-pill">Ofensivas: ${d.value.act_off}</span><span class="gn-act-pill">Defensivas: ${d.value.act_def}</span><span class="gn-act-pill">Suporte: ${d.value.act_sup}</span><span class="gn-act-pill">Livre: ${d.value.act_free}</span>
+                </div>
+                <div class="gn-pet-actions-box" style="margin-top:5px; border-top:1px dotted var(--gn-sec); padding-top:5px;">
+                  <strong style="font-family:'Bangers'; color:var(--gn-sec); font-size:0.9em; display:block; margin-bottom:5px;">Ação do Shikigami:</strong>
+                  <span class="gn-act-pill act-pet-free">Livre: ${d.value.pet_free}</span>
+                </div>
+                <div class="gn-summary-box">
+                  <span class="parsed-summary">${parseBB(d.value.summary)}</span><br><br>
+                  <b>Custo de Vida:</b> <span class="rpg-life">${d.value.lifestyle}</span><br>${lifeBonus}
+                  ${sanStatusHTML}
+                  <br><br>
+                  <b>Aptidões Utilizadas:</b> <span class="rpg-apt">${d.value.aptitudes}</span>
+                </div>
+                <div class="gn-tech-box">${techHTML}</div>
+                <details class="gn-sub-drawer gn-inventory-details" ${detailsAttr}>
+                  <summary></summary>
+                  <div class="gn-sub-content">${invHTML}</div>
+                </details>
+              </div>
+            </details>
+            <div class="gengar-pet-card"><img src="${d.value.pet_img}" class="gengar-pet-img"><div class="gengar-pet-info"><span class="gengar-pet-name">${d.value.pet_name}</span><div class="gengar-pet-bar"><div class="gengar-pet-fill gengar-pet-hp-fill" style="width:${getPct(d.value.pet_hp)}%"></div></div></div><span class="gengar-pet-val gengar-pet-hp-val">${d.value.pet_hp}</span></div>
+          </div>`;
+      };
+
+      const processImport = () => {
+        try {
+          const parser = new DOMParser();
+          const doc = parser.parseFromString(importCode.value, 'text/html');
+          const q = (s) => doc.querySelector(s)?.innerText || "";
+          const qa = (s, attr) => doc.querySelector(s)?.getAttribute(attr) || "";
+
+          d.value.name = q('.gengar-title'); d.value.sub = q('.gengar-subtitle'); d.value.img = qa('.gengar-img-frame img', 'src');
+          d.value.hp = q('.gengar-hp-val'); d.value.ea = q('.gengar-ea-val'); d.value.san = q('.gengar-san-val');
+          d.value.body = reverseBB(doc.querySelector('.gengar-body')?.innerHTML || "");
+          isGengarSkin.value = !!doc.querySelector('.skin-gengar');
+
+          d.value.obj = q('.rpg-obj') || q('.gn-rpg-item:nth-child(1)'); d.value.words = q('.rpg-words') || q('.gn-rpg-item:nth-child(2)'); d.value.turn = q('.rpg-turn') || q('.gn-rpg-item:nth-child(3)');
+          d.value.lifestyle = q('.rpg-life') || "Estável"; d.value.aptitudes = q('.rpg-apt') || "";
+          d.value.summary = reverseBB(doc.querySelector('.parsed-summary')?.innerHTML || "");
+
+          const pills = doc.querySelectorAll('.gn-actions-box .gn-act-pill');
+          if(pills.length >= 4) { d.value.act_off = pills[0].innerText.split(':')[1].trim(); d.value.act_def = pills[1].innerText.split(':')[1].trim(); d.value.act_sup = pills[2].innerText.split(':')[1].trim(); d.value.act_free = pills[3].innerText.split(':')[1].trim(); }
+          
+          const petFree = doc.querySelector('.act-pet-free');
+          if(petFree) d.value.pet_free = petFree.innerText.split(':')[1].trim();
+
+          d.value.techniques = [];
+          doc.querySelectorAll('.parsed-tech').forEach(t => {
+             const html = t.innerHTML; const name = t.querySelector('b')?.innerText||""; const desc = t.querySelector('.tech-desc')?.innerText||"";
+             const cost = html.match(/<b>Custo:<\/b> (.*?)<br>/)?.[1]||""; const cd = html.match(/<b>Turno\/CD:<\/b> (.*?)<br>/)?.[1]||""; const dmg = html.match(/<b>Dano:<\/b> (.*?)<br>/)?.[1]||"";
+             d.value.techniques.push({ name, cost, cd, dmg, desc });
+          });
+
+          // IMPORTAÇÃO LEGACY INTELIGENTE (SUPORTE A FORMATOS ANTIGOS)
+          d.value.inventory = [];
+          const invItems = doc.querySelectorAll('.parsed-inv');
+          if(invItems.length > 0) {
+             // Formato Novo (Estruturado)
+             invItems.forEach(i => {
+                const name = i.querySelector('b')?.innerText||""; const type = i.querySelector('.inv-type')?.innerText.replace(/[\[\]]/g,'')||"";
+                const grade = i.querySelector('.inv-grade')?.innerText||""; const dmg = i.querySelector('.inv-dmg')?.innerText||""; const dur = i.querySelector('.inv-dur')?.innerText||""; const effect = i.querySelector('.inv-effect')?.innerText||""; const desc = i.querySelector('.inv-desc')?.innerText||"";
+                d.value.inventory.push({ name, type, grade, dmg, dur, effect, desc });
+             });
+          } else {
+             // Fallback: Tenta ler texto cru da div de conteúdo
+             const contentDiv = doc.querySelector('.gn-sub-content');
+             if(contentDiv) {
+                const lines = contentDiv.innerHTML.split(/<br\s*\/?>/i);
+                lines.forEach(line => {
+                   let clean = line.trim();
+                   if(!clean) return;
+                   let type = ""; let name = clean;
+                   // Detecta <i>Tipo:</i> Nome
+                   const match = clean.match(/^(?:<i>|<b>)(.*?)(?:<\/i>|<\/b>)\s*:?\s*(.*)/i);
+                   if(match) { type = match[1].replace(/:/g,'').trim(); name = match[2].trim(); }
+                   name = name.replace(/<[^>]*>/g, ''); // Limpa tags restantes
+                   if(name) d.value.inventory.push({ name, type, grade:"", dmg:"", dur:"", effect:"", desc:"" });
+                });
+             }
+          }
+
+          d.value.pet_name = q('.gengar-pet-name'); d.value.pet_hp = q('.gengar-pet-hp-val'); d.value.pet_img = qa('.gengar-pet-img', 'src');
+
+          showImportModal.value = false; toastMsg.value = "CARREGADO!"; showToast.value = true; setTimeout(() => showToast.value = false, 2000);
+        } catch(e) { alert("Erro ao importar."); console.error(e); }
+      };
+
+      const render = () => {
+        const frame = iframe.value; const doc = frame.contentDocument || frame.contentWindow.document;
+        doc.open(); doc.write(`<!DOCTYPE html><html><head><style>body { margin:20px; background:transparent; } .skin-gengar { --gn-bg: #1a0b2e; --gn-panel: #2d1b4e; --gn-border: #000000; --gn-accent: #b026ff; --gn-gold: #00e5ff; --gn-sec: #ff0055; --gn-text: #e0d4fc; --gn-bar-bg: #111111; --gn-shadow: rgba(176, 38, 255, 0.4); } details { display: block !important; }</style></head><body>${generateHTML(true)}</body></html>`); doc.close();
+      };
+
+      const addTech = () => d.value.techniques.push({ name:"", cost:"", cd:"", dmg:"", desc:"" });
+      const remTech = (i) => d.value.techniques.splice(i, 1);
+      const addInv = () => d.value.inventory.push({ name:"", type:"", grade:"", dmg:"", dur:"", desc:"", effect:"" });
+      const remInv = (i) => d.value.inventory.splice(i, 1);
+      const reset = () => { if(confirm("Limpar dados?")) { d.value = JSON.parse(JSON.stringify(EMPTY_DATA)); localStorage.removeItem(STORAGE_KEY); } };
+      const toggleSkin = () => isGengarSkin.value = !isGengarSkin.value;
+      const copyCode = () => { 
+        let code = generateHTML(false);
+        code = code.replace(/(\r\n|\n|\r)/gm, "");
+        navigator.clipboard.writeText(code).then(() => { toastMsg.value = "CÓDIGO COPIADO!"; showToast.value = true; setTimeout(() => showToast.value = false, 2000); }); 
+      };
+
+      return { d, iframe, isGengarSkin, skinName, showToast, toastMsg, showImportModal, importCode, addTech, remTech, addInv, remInv, reset, toggleSkin, copyCode, insertTag, processImport, handleListEnter };
+    }
+  }).mount('#app');
+</script>
+</body>
+</html>
